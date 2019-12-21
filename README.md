@@ -8,4 +8,4 @@ The second stage of the code iedb_output_parse.pl, parses and analyses the outpu
 Full methodological details are found in Gaunt et al (2020) AVR https://www.sciencedirect.com/science/article/pii/S0166354219303262?via%3Dihub
 
 # Amino bootscan pipeline
-These scripts are written in Python 3.7 making strong use of BioPython and ETE3 amongst other dependencies. Whilst IEDB is pretty much ready to go and would be very easy to modulise, you will need a clear understanding of Python to 'Amino Bootscan'. Please note, this script is under further development towards producing a full API
+These scripts are written in Python 3.7 making strong use of BioPython and ETE3 amongst other dependencies. Whilst IEDB is pretty much ready to go and would be very easy to modulise, you will need a clear understanding of Python to use 'Amino Bootscan'. Please note, this script is under further development towards producing a full API
