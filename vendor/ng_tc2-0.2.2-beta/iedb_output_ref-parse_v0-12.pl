@@ -1,6 +1,21 @@
 #!/usr/local/bin/perl
 # Derived from iedb_output_parse_v0-4.pl; ref-only adaptation and thresholds customized.
 # author: Michael W. Gaunt, Ph.D
+#
+# NOTE: CONCATENATION ERROR (Nov 2024):
+# This script creates concatenated output files (Summary_IEDB_anticancer_summary.csv and
+# Global_IEDB_out_anticancer_summary.csv) by appending to them using append mode (>>) in the
+# iedb_printout() function. However, when processing multiple peptide sizes (e.g., 15-mer and 16-mer),
+# the concatenated file was found to only contain the last processed size, missing all previous sizes.
+#
+# RESOLUTION: The Python function _concatenate_ref_outputs() in iedb_run-cmd_v0-2.py now always
+# re-concatenates from size-specific files (*.15.csv, *.16.csv, etc.) using pandas, ensuring all
+# sizes are properly included. The concatenated files created by this script are overwritten by
+# the Python function to ensure completeness.
+#
+# The size-specific files (*.15.csv, *.16.csv) created by file_clean() are correct and complete;
+# only the concatenated files had the issue.
+#
 use strict;
 use warnings;
 
