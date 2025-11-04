@@ -1,0 +1,7 @@
+docker-build/
+/ng_tc2-0.2.2-beta/
+dev_test_out-pl/
+parsed_output/
+MD5SUM
+venv/
+
