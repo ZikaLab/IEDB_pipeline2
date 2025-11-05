@@ -120,6 +120,9 @@ def run_parsing_pipeline(base_dir: Path, parser_ref_path: Path, parser_v05_path:
 	
 	# Join query and ref outputs
 	_join_query_ref_outputs(base_dir, query_output_dir, ref_output_dir)
+	
+	# Generate shared epitopes output
+	shared_epitopes(base_dir)
 
 
 def _concatenate_ref_outputs(base_dir: Path, ref_output_dir: str) -> None:
@@ -127,7 +130,7 @@ def _concatenate_ref_outputs(base_dir: Path, ref_output_dir: str) -> None:
 	
 	NOTE: CONCATENATION ERROR RESOLUTION (Nov 2024):
 	The ref parser (iedb_output_ref-parse_v0-12.pl) creates concatenated files
-	by appending to Summary_IEDB_anticancer_summary.csv and Global_IEDB_out_anticancer_summary.csv
+	by appending to Summary_IEDB_CD4epitope_summary.csv and Global_IEDB_out_CD4epitope_summary.csv
 	using append mode (>>). However, this was found to only include the last processed size
 	(e.g., only 16-mer peptides, missing all 15-mer peptides).
 	
@@ -140,18 +143,18 @@ def _concatenate_ref_outputs(base_dir: Path, ref_output_dir: str) -> None:
 	"""
 	store = base_dir / f"{ref_output_dir}/outfile_store"
 	# Class II uses sizes 15-20, file names are like:
-	# Global_IEDB_out_anticancer_summary.15.csv, Global_IEDB_out_anticancer_summary.16.csv, etc.
-	# Summary_IEDB_anticancer_summary.15.csv, Summary_IEDB_anticancer_summary.16.csv, etc.
+	# Global_IEDB_out_CD4epitope_summary.15.csv, Global_IEDB_out_CD4epitope_summary.16.csv, etc.
+	# Summary_IEDB_CD4epitope_summary.15.csv, Summary_IEDB_CD4epitope_summary.16.csv, etc.
 	global_targets = [
-		store / "Global_IEDB_out_anticancer_summary.15.csv",
-		store / "Global_IEDB_out_anticancer_summary.16.csv",
-		store / "Global_IEDB_out_anticancer_summary.17.csv",
-		store / "Global_IEDB_out_anticancer_summary.18.csv",
-		store / "Global_IEDB_out_anticancer_summary.19.csv",
-		store / "Global_IEDB_out_anticancer_summary.20.csv",
+		store / "Global_IEDB_out_CD4epitope_summary.15.csv",
+		store / "Global_IEDB_out_CD4epitope_summary.16.csv",
+		store / "Global_IEDB_out_CD4epitope_summary.17.csv",
+		store / "Global_IEDB_out_CD4epitope_summary.18.csv",
+		store / "Global_IEDB_out_CD4epitope_summary.19.csv",
+		store / "Global_IEDB_out_CD4epitope_summary.20.csv",
 	]
 	# Always re-concatenate from size-specific files (v0-12.pl may create incomplete concatenated file)
-	global_out = store / "Global_IEDB_out_anticancer_summary.csv"
+	global_out = store / "Global_IEDB_out_CD4epitope_summary.csv"
 	# Use pandas to properly concatenate (handles headers and ensures all rows are included)
 	gdfs = []
 	for f in global_targets:
@@ -180,16 +183,16 @@ def _concatenate_ref_outputs(base_dir: Path, ref_output_dir: str) -> None:
 							go.write(line.rstrip() + "\n")
 
 	summary_targets = [
-		store / "Summary_IEDB_anticancer_summary.15.csv",
-		store / "Summary_IEDB_anticancer_summary.16.csv",
-		store / "Summary_IEDB_anticancer_summary.17.csv",
-		store / "Summary_IEDB_anticancer_summary.18.csv",
-		store / "Summary_IEDB_anticancer_summary.19.csv",
-		store / "Summary_IEDB_anticancer_summary.20.csv",
+		store / "Summary_IEDB_CD4epitope_summary.15.csv",
+		store / "Summary_IEDB_CD4epitope_summary.16.csv",
+		store / "Summary_IEDB_CD4epitope_summary.17.csv",
+		store / "Summary_IEDB_CD4epitope_summary.18.csv",
+		store / "Summary_IEDB_CD4epitope_summary.19.csv",
+		store / "Summary_IEDB_CD4epitope_summary.20.csv",
 	]
 	# Always re-concatenate from size-specific files (v0-12.pl may create incomplete concatenated file)
 	# This ensures all sizes are included, not just the last one processed
-	summary_out = store / "Summary_IEDB_anticancer_summary.csv"
+	summary_out = store / "Summary_IEDB_CD4epitope_summary.csv"
 	# Use pandas to properly concatenate (handles headers and ensures all rows are included)
 	dfs = []
 	for f in summary_targets:
@@ -207,7 +210,7 @@ def _concatenate_ref_outputs(base_dir: Path, ref_output_dir: str) -> None:
 			for f in summary_targets:
 				size = None
 				name = f.name
-				# Extract size from filename like "Summary_IEDB_anticancer_summary.15.csv"
+				# Extract size from filename like "Summary_IEDB_CD4epitope_summary.15.csv"
 				match = re.search(r'\.(\d+)\.csv$', name)
 				if match:
 					size = int(match.group(1))
@@ -244,7 +247,7 @@ def _concatenate_ref_outputs(base_dir: Path, ref_output_dir: str) -> None:
 def _load_reference_sequence_names(base_dir: Path) -> set:
 	"""Load reference sequence names from the reference CSV file.
 	
-	Reads the reference CSV file (anticancer_test-ref.csv) and extracts
+	Reads the reference CSV file (CD4epitope_test-ref.csv) and extracts
 	all sequence names from the "Peptide" column.
 	
 	Returns:
@@ -282,8 +285,8 @@ def _join_query_ref_outputs(base_dir: Path, query_output_dir: str, ref_output_di
 	ref_sequence_names = _load_reference_sequence_names(base_dir)
 	
 	# Join query homology Summary with ref Summary and write to query-ref_parsed
-	query_summary = base_dir / f"{query_output_dir}/homology_output/Summary_IEDB_anticancer_summary.csv"
-	ref_summary = base_dir / f"{ref_output_dir}/outfile_store/Summary_IEDB_anticancer_summary.csv"
+	query_summary = base_dir / f"{query_output_dir}/homology_output/Summary_IEDB_CD4epitope_summary.csv"
+	ref_summary = base_dir / f"{ref_output_dir}/outfile_store/Summary_IEDB_CD4epitope_summary.csv"
 	if query_summary.exists() and ref_summary.exists():
 		query_df = pd.read_csv(query_summary)
 		ref_df = pd.read_csv(ref_summary)
@@ -348,7 +351,7 @@ def _join_query_ref_outputs(base_dir: Path, query_output_dir: str, ref_output_di
 					log_file.write("=" * 80 + "\n")
 					log_file.write(f"Total excluded rows: {len(ref_excluded)}\n")
 					log_file.write(f"Date: {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-					log_file.write(f"Source: Summary_IEDB_anticancer_query_ref.csv\n")
+					log_file.write(f"Source: Summary_IEDB_CD4epitope_query_ref.csv\n")
 					log_file.write(f"Reference sequences: {', '.join(sorted(ref_sequence_names))}\n")
 					log_file.write("=" * 80 + "\n")
 					log_file.write("\n")  # Blank line before CSV data
@@ -369,7 +372,7 @@ def _join_query_ref_outputs(base_dir: Path, query_output_dir: str, ref_output_di
 				log_file.write("=" * 80 + "\n")
 				log_file.write(f"Total excluded rows: {len(excluded_summary)}\n")
 				log_file.write(f"Date: {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-				log_file.write(f"Source: Summary_IEDB_anticancer_query_ref.csv\n")
+				log_file.write(f"Source: Summary_IEDB_CD4epitope_query_ref.csv\n")
 				log_file.write("=" * 80 + "\n")
 				log_file.write("\n")  # Blank line before CSV data
 				# Write CSV data (header + rows)
@@ -379,13 +382,13 @@ def _join_query_ref_outputs(base_dir: Path, query_output_dir: str, ref_output_di
 		# Write filtered results to output file
 		out_dir = base_dir / "query-ref_parsed"
 		out_dir.mkdir(parents=True, exist_ok=True)
-		out_path = out_dir / "Summary_IEDB_anticancer_query_ref.csv"
+		out_path = out_dir / "Summary_IEDB_CD4epitope_query_ref.csv"
 		result_filtered.to_csv(out_path.as_posix(), index=False)
 		print(f"Wrote joined query-ref summary ({len(result_filtered)} rows) → {out_path}")
 
 	# Do the same join for the Global files (homology_output vs ref outfile_store)
-	query_global = base_dir / f"{query_output_dir}/homology_output/Global_IEDB_out_anticancer_summary.csv"
-	ref_global = base_dir / f"{ref_output_dir}/outfile_store/Global_IEDB_out_anticancer_summary.csv"
+	query_global = base_dir / f"{query_output_dir}/homology_output/Global_IEDB_out_CD4epitope_summary.csv"
+	ref_global = base_dir / f"{ref_output_dir}/outfile_store/Global_IEDB_out_CD4epitope_summary.csv"
 	if query_global.exists() and ref_global.exists():
 		qg = pd.read_csv(query_global)
 		rg = pd.read_csv(ref_global)
@@ -445,7 +448,7 @@ def _join_query_ref_outputs(base_dir: Path, query_output_dir: str, ref_output_di
 					log_file.write("=" * 80 + "\n")
 					log_file.write(f"Total excluded rows: {len(ref_excluded_global)}\n")
 					log_file.write(f"Date: {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-					log_file.write(f"Source: Global_IEDB_out_anticancer_query_ref.csv\n")
+					log_file.write(f"Source: Global_IEDB_out_CD4epitope_query_ref.csv\n")
 					log_file.write(f"Reference sequences: {', '.join(sorted(ref_sequence_names))}\n")
 					log_file.write("=" * 80 + "\n")
 					log_file.write("\n")  # Blank line before CSV data
@@ -466,7 +469,7 @@ def _join_query_ref_outputs(base_dir: Path, query_output_dir: str, ref_output_di
 				log_file.write("=" * 80 + "\n")
 				log_file.write(f"Total excluded rows: {len(excluded_global)}\n")
 				log_file.write(f"Date: {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-				log_file.write(f"Source: Global_IEDB_out_anticancer_query_ref.csv\n")
+				log_file.write(f"Source: Global_IEDB_out_CD4epitope_query_ref.csv\n")
 				log_file.write("=" * 80 + "\n")
 				log_file.write("\n")  # Blank line before CSV data
 				# Write CSV data (header + rows)
@@ -476,9 +479,71 @@ def _join_query_ref_outputs(base_dir: Path, query_output_dir: str, ref_output_di
 		# Write filtered results to output file
 		out_dir = base_dir / "query-ref_parsed"
 		out_dir.mkdir(parents=True, exist_ok=True)
-		g_out = out_dir / "Global_IEDB_out_anticancer_query_ref.csv"
+		g_out = out_dir / "Global_IEDB_out_CD4epitope_query_ref.csv"
 		g_join_filtered.to_csv(g_out.as_posix(), index=False)
 		print(f"Wrote joined query-ref global ({len(g_join_filtered)} rows) → {g_out}")
+
+
+def shared_epitopes(base_dir: Path) -> None:
+	"""Find and aggregate shared epitopes across different query sequences.
+	
+	Identifies rows with identical "Peptide", "Method", and "HLA genotype" but
+	different "Peptide query" values. Combines them into a single row with
+	concatenated query names (alphabetically sorted, joined by "_").
+	
+	Args:
+		base_dir: Base directory path
+	"""
+	# Input file from join operation
+	summary_file = base_dir / "query-ref_parsed/Summary_IEDB_CD4epitope_query_ref.csv"
+	
+	if not summary_file.exists():
+		print(f"[shared_epitopes] Warning: Input file not found: {summary_file}")
+		return
+	
+	# Read the summary file
+	df = pd.read_csv(summary_file)
+	
+	if len(df) == 0:
+		print(f"[shared_epitopes] Warning: Input file is empty: {summary_file}")
+		return
+	
+	# Group by Peptide, Method, and HLA genotype
+	grouped = df.groupby(['Peptide', 'Method', 'HLA genotype'])
+	
+	# Filter groups that have more than one unique Peptide query
+	shared_groups = []
+	
+	for (peptide, method, hla), group in grouped:
+		unique_queries = group['Peptide query'].unique()
+		if len(unique_queries) > 1:
+			# Sort query names alphabetically and join with "_"
+			combined_query = "_".join(sorted(unique_queries))
+			
+			# Take the first row from the group (all columns should be the same
+			# except for Peptide query, which we'll replace)
+			row = group.iloc[0].copy()
+			row['Peptide query'] = combined_query
+			
+			shared_groups.append(row)
+	
+	if len(shared_groups) == 0:
+		print(f"[shared_epitopes] No shared epitopes found (all peptides are unique per query)")
+		return
+	
+	# Create DataFrame from shared groups
+	shared_df = pd.DataFrame(shared_groups)
+	
+	# Reset index to ensure clean output
+	shared_df = shared_df.reset_index(drop=True)
+	
+	# Write to output file
+	out_dir = base_dir / "query-ref_parsed"
+	out_dir.mkdir(parents=True, exist_ok=True)
+	out_file = out_dir / "Shared_CD4epitopes_allquery-ref.csv"
+	
+	shared_df.to_csv(out_file.as_posix(), index=False)
+	print(f"[shared_epitopes] Wrote shared epitopes ({len(shared_df)} rows) → {out_file}")
 
 
 def main() -> None:
