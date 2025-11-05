@@ -1,0 +1,2 @@
+curl ftp://ftp.ebi.ac.uk/pub/databases/ipd/imgt/hla/Allelelist.txt -o Allelelist.txt
+

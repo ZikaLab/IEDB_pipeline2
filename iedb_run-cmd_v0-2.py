@@ -241,8 +241,46 @@ def _concatenate_ref_outputs(base_dir: Path, ref_output_dir: str) -> None:
 							cols.insert(idx, f"{size}-mer")
 						so.write(",".join(cols) + "\n")
 
+def _load_reference_sequence_names(base_dir: Path) -> set:
+	"""Load reference sequence names from the reference CSV file.
+	
+	Reads the reference CSV file (anticancer_test-ref.csv) and extracts
+	all sequence names from the "Peptide" column.
+	
+	Returns:
+		set: Set of reference sequence names
+	"""
+	ref_names = set()
+	data_dir = base_dir / "data"
+	
+	# Find reference CSV file (contains "ref" in filename)
+	ref_csv_files = [f for f in data_dir.glob("*.csv") if "ref" in f.name.lower()]
+	if not ref_csv_files:
+		print(f"[warning] No reference CSV file found in {data_dir}, cannot filter reference sequences")
+		return ref_names
+	
+	ref_csv = ref_csv_files[0]
+	try:
+		ref_df = pd.read_csv(ref_csv, sep="\t")
+		# Check for "Peptide" column (standard format)
+		if "Peptide" in ref_df.columns:
+			ref_names = set(ref_df["Peptide"].dropna().unique())
+		else:
+			# Fallback: use first column as sequence names
+			first_col = ref_df.columns[0]
+			ref_names = set(ref_df[first_col].dropna().unique())
+		print(f"[filter] Loaded {len(ref_names)} reference sequence names from {ref_csv.name}: {sorted(ref_names)}")
+	except Exception as e:
+		print(f"[warning] Error reading reference CSV {ref_csv}: {e}")
+	
+	return ref_names
+
+
 def _join_query_ref_outputs(base_dir: Path, query_output_dir: str, ref_output_dir: str) -> None:
 	"""Join query and ref outputs using pandas (Class II format)."""
+	# Load reference sequence names to filter them out
+	ref_sequence_names = _load_reference_sequence_names(base_dir)
+	
 	# Join query homology Summary with ref Summary and write to query-ref_parsed
 	query_summary = base_dir / f"{query_output_dir}/homology_output/Summary_IEDB_anticancer_summary.csv"
 	ref_summary = base_dir / f"{ref_output_dir}/outfile_store/Summary_IEDB_anticancer_summary.csv"
@@ -281,11 +319,69 @@ def _join_query_ref_outputs(base_dir: Path, query_output_dir: str, ref_output_di
 			except Exception:
 				return ""
 		result["Percentile Delta"] = result.apply(_delta, axis=1)
+		
+		# Filter: Exclude rows where "Ref Adjusted Percentile" is missing
+		# These are query epitopes that don't exist in the reference
+		excluded_summary = result[result["Ref Adjusted Percentile"].isna()].copy()
+		result_filtered = result[result["Ref Adjusted Percentile"].notna()].copy()
+		
+		# Filter: Exclude rows where Query sequence is a reference sequence
+		# Check column name (could be "Peptide query" or "Query")
+		query_col = None
+		if "Peptide query" in result_filtered.columns:
+			query_col = "Peptide query"
+		elif "Query" in result_filtered.columns:
+			query_col = "Query"
+		
+		if query_col and ref_sequence_names:
+			ref_excluded = result_filtered[result_filtered[query_col].isin(ref_sequence_names)].copy()
+			result_filtered = result_filtered[~result_filtered[query_col].isin(ref_sequence_names)].copy()
+			
+			if len(ref_excluded) > 0:
+				log_dir = base_dir / "log"
+				log_dir.mkdir(parents=True, exist_ok=True)
+				log_path = log_dir / "reference_sequence_excluded_summary.log"
+				with log_path.open("w") as log_file:
+					log_file.write("The following rows were excluded because the query sequence is a reference sequence\n")
+					log_file.write("\n")  # Blank line
+					log_file.write("Excluded Reference Sequences - Summary File\n")
+					log_file.write("=" * 80 + "\n")
+					log_file.write(f"Total excluded rows: {len(ref_excluded)}\n")
+					log_file.write(f"Date: {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+					log_file.write(f"Source: Summary_IEDB_anticancer_query_ref.csv\n")
+					log_file.write(f"Reference sequences: {', '.join(sorted(ref_sequence_names))}\n")
+					log_file.write("=" * 80 + "\n")
+					log_file.write("\n")  # Blank line before CSV data
+					ref_excluded.to_csv(log_file, index=False)
+				print(f"Excluded {len(ref_excluded)} summary rows (reference sequences) → {log_path}")
+		
+		# Write excluded epitopes to log file
+		log_dir = base_dir / "log"
+		log_dir.mkdir(parents=True, exist_ok=True)
+		if len(excluded_summary) > 0:
+			log_path = log_dir / "reference_excluded_epitopes_summary.log"
+			with log_path.open("w") as log_file:
+				# Write single explanatory line
+				log_file.write("The following files were excluded because the query epitope was absent in the reference epitope\n")
+				log_file.write("\n")  # Blank line
+				# Write multi-line header with context
+				log_file.write("Excluded Epitopes - Summary File\n")
+				log_file.write("=" * 80 + "\n")
+				log_file.write(f"Total excluded rows: {len(excluded_summary)}\n")
+				log_file.write(f"Date: {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+				log_file.write(f"Source: Summary_IEDB_anticancer_query_ref.csv\n")
+				log_file.write("=" * 80 + "\n")
+				log_file.write("\n")  # Blank line before CSV data
+				# Write CSV data (header + rows)
+				excluded_summary.to_csv(log_file, index=False)
+			print(f"Excluded {len(excluded_summary)} summary rows without Ref Adjusted Percentile → {log_path}")
+		
+		# Write filtered results to output file
 		out_dir = base_dir / "query-ref_parsed"
 		out_dir.mkdir(parents=True, exist_ok=True)
 		out_path = out_dir / "Summary_IEDB_anticancer_query_ref.csv"
-		result.to_csv(out_path.as_posix(), index=False)
-		print(f"Wrote joined query-ref summary → {out_path}")
+		result_filtered.to_csv(out_path.as_posix(), index=False)
+		print(f"Wrote joined query-ref summary ({len(result_filtered)} rows) → {out_path}")
 
 	# Do the same join for the Global files (homology_output vs ref outfile_store)
 	query_global = base_dir / f"{query_output_dir}/homology_output/Global_IEDB_out_anticancer_summary.csv"
@@ -324,11 +420,65 @@ def _join_query_ref_outputs(base_dir: Path, query_output_dir: str, ref_output_di
 			except Exception:
 				return ""
 		g_join["Percentile Delta"] = g_join.apply(_gdelta, axis=1)
+		
+		# Filter: Exclude rows where "Ref Adjusted Percentile" is missing
+		# These are query epitopes that don't exist in the reference
+		excluded_global = g_join[g_join["Ref Adjusted Percentile"].isna()].copy()
+		g_join_filtered = g_join[g_join["Ref Adjusted Percentile"].notna()].copy()
+		
+		# Filter: Exclude rows where Query sequence is a reference sequence
+		# Check column name (could be "Query")
+		query_col = "Query" if "Query" in g_join_filtered.columns else None
+		
+		if query_col and ref_sequence_names:
+			ref_excluded_global = g_join_filtered[g_join_filtered[query_col].isin(ref_sequence_names)].copy()
+			g_join_filtered = g_join_filtered[~g_join_filtered[query_col].isin(ref_sequence_names)].copy()
+			
+			if len(ref_excluded_global) > 0:
+				log_dir = base_dir / "log"
+				log_dir.mkdir(parents=True, exist_ok=True)
+				log_path = log_dir / "reference_sequence_excluded_global.log"
+				with log_path.open("w") as log_file:
+					log_file.write("The following rows were excluded because the query sequence is a reference sequence\n")
+					log_file.write("\n")  # Blank line
+					log_file.write("Excluded Reference Sequences - Global File\n")
+					log_file.write("=" * 80 + "\n")
+					log_file.write(f"Total excluded rows: {len(ref_excluded_global)}\n")
+					log_file.write(f"Date: {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+					log_file.write(f"Source: Global_IEDB_out_anticancer_query_ref.csv\n")
+					log_file.write(f"Reference sequences: {', '.join(sorted(ref_sequence_names))}\n")
+					log_file.write("=" * 80 + "\n")
+					log_file.write("\n")  # Blank line before CSV data
+					ref_excluded_global.to_csv(log_file, index=False)
+				print(f"Excluded {len(ref_excluded_global)} global rows (reference sequences) → {log_path}")
+		
+		# Write excluded epitopes to log file
+		log_dir = base_dir / "log"
+		log_dir.mkdir(parents=True, exist_ok=True)
+		if len(excluded_global) > 0:
+			log_path = log_dir / "reference_excluded_epitopes_global.log"
+			with log_path.open("w") as log_file:
+				# Write single explanatory line
+				log_file.write("The following files were excluded because the query epitope was absent in the reference epitope\n")
+				log_file.write("\n")  # Blank line
+				# Write multi-line header with context
+				log_file.write("Excluded Epitopes - Global File\n")
+				log_file.write("=" * 80 + "\n")
+				log_file.write(f"Total excluded rows: {len(excluded_global)}\n")
+				log_file.write(f"Date: {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+				log_file.write(f"Source: Global_IEDB_out_anticancer_query_ref.csv\n")
+				log_file.write("=" * 80 + "\n")
+				log_file.write("\n")  # Blank line before CSV data
+				# Write CSV data (header + rows)
+				excluded_global.to_csv(log_file, index=False)
+			print(f"Excluded {len(excluded_global)} global rows without Ref Adjusted Percentile → {log_path}")
+		
+		# Write filtered results to output file
 		out_dir = base_dir / "query-ref_parsed"
 		out_dir.mkdir(parents=True, exist_ok=True)
 		g_out = out_dir / "Global_IEDB_out_anticancer_query_ref.csv"
-		g_join.to_csv(g_out.as_posix(), index=False)
-		print(f"Wrote joined query-ref global → {g_out}")
+		g_join_filtered.to_csv(g_out.as_posix(), index=False)
+		print(f"Wrote joined query-ref global ({len(g_join_filtered)} rows) → {g_out}")
 
 
 def main() -> None:

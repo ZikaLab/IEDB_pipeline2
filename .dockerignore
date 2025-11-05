@@ -1,0 +1,54 @@
+# Ignore unnecessary files in Docker build
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+venv/
+env/
+*.log
+.DS_Store
+.git/
+.gitignore
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+
+# Ignore output directories (created at runtime)
+query_parsed/
+ref_parsed/
+query_output/
+ref_output/
+ref_tmp/
+query-ref_parsed/
+query_output.old/
+ref_output.old/
+query_parsed.pld/
+ref_parsed.old/
+query-ref_parsed.old/
+run_*/
+dev_test_out*/
+anticancer_test_outfile_store/
+*.csv.tsv
+*.tsv
+
+# Ignore large test/example directories that aren't needed in production
+1_ng_tc1-0.1.2-beta/test_data/
+1_ng_tc1-0.1.2-beta/examples/
+1_ng_tc1-0.1.2-beta/docker/
+
+# Ignore AWS config files (not needed in container)
+aws/
+aws-backup-yaml/
+
+# Ignore temporary and test files (keep README files for documentation)
+download.zip
+*_report.md
+test_*.tsv
+test_*.json
+test_*.fa
+test_output/
+test_run.txt
+

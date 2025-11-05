@@ -1,7 +1,28 @@
 docker-build/
 /ng_tc2-0.2.2-beta/
+ng_tc2-0.2.2-beta/
 dev_test_out-pl/
+dev_test_out-pl.old/
 parsed_output/
 MD5SUM
 venv/
+# Output directories
+query_output/
+query_output.penult/
+query_output*/
+ref_output/
+ref_output.penult/
+ref_output*/
+query_parsed/
+query_parsed.penult/
+query_parsed*/
+ref_parsed/
+ref_parsed.penult/
+ref_parsed*/
+ref_test/
+query-ref_parsed/
+query-ref_parsed*/
+# Large archive files
+*.tar
+IEDB_NG_TC2-*.tar
 

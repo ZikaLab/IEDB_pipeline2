@@ -254,6 +254,8 @@ sub run_iedb {
 				# Updated to use Class II IEDB path - tcell_mhcii.py
 				my $base_dir = $ENV{'BASE_DIR'} ? $ENV{'BASE_DIR'} : '/Users/michael_gaunt/Desktop/Anastasia2';
 				my $iedb_script = "$base_dir/ng_tc2-0.2.2-beta/src/tcell_mhcii.py";
+				# Use venv python3 if PYTHON3_PATH is set (from wrapper), otherwise use system python3
+				my $python_cmd = $ENV{'PYTHON3_PATH'} ? $ENV{'PYTHON3_PATH'} : 'python3';
 				# Create JSON input for binding methods (TEPITOPE and Comblib use file_path)
 				my $tmp_json = $tmpf;
 				$tmp_json =~ s/\.fa$/\.json/;
@@ -272,7 +274,8 @@ sub run_iedb {
 				print $json_fh "}\n";
 				close $json_fh;
 				# Run IEDB with JSON input - IEDB handles sliding window automatically
-				my $iedb_cmd = "python3 $iedb_script -j \"$tmp_json\" -o \"$iedb_out_0$output\" -f tsv 2>&1";
+				# Use venv python3 if available (set by wrapper)
+				my $iedb_cmd = "$python_cmd $iedb_script -j \"$tmp_json\" -o \"$iedb_out_0$output\" -f tsv 2>&1";
 				system ($iedb_cmd); 
 #				system("rm $tmpf") if -e $tmpf; # Keep for now as it provides a log of activity
 #				system("rm $tmp_json") if -e $tmp_json; # Clean up JSON temp file

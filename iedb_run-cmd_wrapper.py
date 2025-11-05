@@ -30,11 +30,15 @@ REF_OUTPUT_ROOT = OUTPUT_ROOT / "ref_output"
 QUERY_OUTPUT_ROOT = OUTPUT_ROOT / "query_output"
 REF_TMP_DIR = OUTPUT_ROOT / "ref_tmp"
 
-# Parser paths
-PARSER_REF = BASE_DIR / "vendor/ng_tc2-0.2.2-beta/iedb_output_ref-parse_v0-1.pl"
-PARSER_V05 = BASE_DIR / "vendor/ng_tc2-0.2.2-beta/iedb_output_parse_v0-5.pl"
+# Parser paths (Class II versions)
+PARSER_REF = BASE_DIR / "vendor/ng_tc2-0.2.2-beta/iedb_output_ref-parse_v0-12.pl"
+PARSER_V05 = BASE_DIR / "vendor/ng_tc2-0.2.2-beta/iedb_output_parse_v0-52.pl"  # v0-52 uses CLI_INPUT_DIR
 
-CD8_ALLELE = "HLA-A*02:01"  # Aligned with existing usage
+CD8_ALLELE = "HLA-A*02:01"  # Aligned with existing usage (not used - Perl scripts read from params/CD_type.dat)
+
+# Note: The wrapper does NOT read params/CD_type.dat or params/length.dat directly.
+# These are read by the Perl scripts (iedb_alignment_run_v0-2.pl, iedb_output_parse_v0-51.pl, etc.)
+# The wrapper should validate that these files exist before running Perl scripts.
 
 
 def find_reference_and_query(data_dir: Path) -> tuple[Path, Path]:
@@ -204,6 +208,15 @@ def run_perl(perl_path: Path) -> None:
     # Pass BASE_DIR as environment variable for Perl scripts
     env = os.environ.copy()
     env['BASE_DIR'] = BASE_DIR.as_posix()
+    
+    # Use venv python3 if venv exists, otherwise use system python3
+    venv_python = BASE_DIR / "venv" / "bin" / "python3"
+    if venv_python.exists():
+        env['PATH'] = str(venv_python.parent) + os.pathsep + env.get('PATH', '')
+        # Explicitly set python3 path for Perl scripts
+        env['PYTHON3_PATH'] = str(venv_python)
+        print(f"[wrapper] Using venv Python: {venv_python}")
+    
     completed = subprocess.run(cmd, cwd=BASE_DIR.as_posix(), env=env, capture_output=True, text=True)
     if completed.stdout:
         print("[perl stdout]\n" + completed.stdout)
@@ -242,7 +255,35 @@ def verify_outputs(output_root: Path, label: str) -> None:
     print(f"[{label}] fa_tmp exists; Total_EPAM logs found: {len(logs)}")
 
 
+def validate_params(base_dir: Path) -> None:
+    """Validate that required params files exist."""
+    cd_type_file = base_dir / "params" / "CD_type.dat"
+    length_file = base_dir / "params" / "length.dat"
+    
+    if not cd_type_file.exists():
+        raise RuntimeError(
+            f"Required params file not found: {cd_type_file}\n"
+            f"Please ensure params/CD_type.dat exists with HLA alleles."
+        )
+    if not length_file.exists():
+        raise RuntimeError(
+            f"Required params file not found: {length_file}\n"
+            f"Please ensure params/length.dat exists with peptide length range (e.g., '15, 20')."
+        )
+    
+    # Read and validate length.dat format
+    try:
+        length_content = length_file.read_text().strip()
+        if not length_content or ',' not in length_content:
+            raise ValueError(f"Invalid format in {length_file}. Expected 'min, max' (e.g., '15, 20')")
+    except Exception as e:
+        raise RuntimeError(f"Error reading {length_file}: {e}")
+
+
 def main() -> None:
+    # Validate params files exist (Perl scripts will read them)
+    validate_params(BASE_DIR)
+    
     ref_csv, query_csv = find_reference_and_query(DATA_DIR)
 
     # Prepare ref_tmp
@@ -274,7 +315,10 @@ def main() -> None:
         ref_output_dir="ref_parsed",
         query_input_dir="query_output",
         query_output_dir="query_parsed",
-        percentile_threshold="2.5"
+        percentile_threshold="2.5",  # Class II default threshold
+        # Note: This threshold is used for:
+        # - Homology mode: filters by percentile <= threshold (line 381 in v0-51.pl)
+        # - Relaxed mode: filters by adjusted_percentile <= threshold (line 871 in v0-51.pl)
     )
 
     print("All runs completed successfully.")

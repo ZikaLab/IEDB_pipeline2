@@ -1,0 +1,3 @@
+# Pull and run:
+docker pull 842675972940.dkr.ecr.us-east-1.amazonaws.com/anastasia:latest
+docker run --rm -v /path/to/data:/app/data:ro -v /path/to/output:/app/outputs anastasia:latest

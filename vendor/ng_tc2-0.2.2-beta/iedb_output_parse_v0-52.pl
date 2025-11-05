@@ -1,29 +1,25 @@
 #!/usr/local/bin/perl
 # author: Michael W. Gaunt, Ph.D
 # Query parser with dual output streams (homology and percentile filtered)
-#
-# NOTE: This version (v0-51) reads input from hardcoded '/dev_test_out-pl/' directory
-# via the master_files hash. This creates uncertainty and potential conflicts because:
-#   1. Both ref and query parsers may read from the same directory
-#   2. The input directory is hardcoded and cannot be specified via CLI
-#   3. Files from one run may be incorrectly processed by the next run
-#
-# v0-52 was created to address this issue by using CLI_INPUT_DIR parameter (like v0-12.pl),
-# allowing explicit specification of input directories and eliminating the conflict.
-#
+# v0-52: Updated to use CLI_INPUT_DIR like v0-12.pl (fixes input directory conflict)
 use strict;
 use warnings;
 
-# CLI-configured output directory (required) and optional thresholds
+# CLI-configured output directory (required) and input directory (required)
 my $CLI_OUTPUT_DIR = defined $ARGV[0] ? $ARGV[0] : '';
+my $CLI_INPUT_DIR = defined $ARGV[1] ? $ARGV[1] : '';
 if (!$CLI_OUTPUT_DIR) {
 	die "No output directory specified\n";
 }
+if (!$CLI_INPUT_DIR) {
+	die "No input directory specified\n";
+}
 $CLI_OUTPUT_DIR .= '/' unless $CLI_OUTPUT_DIR =~ /\/$/;
+$CLI_INPUT_DIR .= '/' unless $CLI_INPUT_DIR =~ /\/$/;
 
-# Optional: percentile and homology thresholds from CLI
-my $CLI_PERCENTILE_THRESHOLD = defined $ARGV[1] ? $ARGV[1] : '';
-my $CLI_HOMOLOGY_THRESHOLD = defined $ARGV[2] ? $ARGV[2] : '';
+# Optional: percentile and homology thresholds from CLI (shifted to ARGV[2] and ARGV[3] since ARGV[1] is now INPUT_DIR)
+my $CLI_PERCENTILE_THRESHOLD = defined $ARGV[2] ? $ARGV[2] : '';
+my $CLI_HOMOLOGY_THRESHOLD = defined $ARGV[3] ? $ARGV[3] : '';
 
 #####################################################################################################
 #####################################################################################################
@@ -165,8 +161,8 @@ sub main {
 	for my $directory (sort keys %master_files){
 			my $align = $master_files{$directory};
 		for my $store_no ($length_min..$length_max){
-			# Use CLI-provided output directory as root
-			my $iedb_out = $here . $directory;
+			# Use CLI-provided input directory (like v0-12.pl) instead of hardcoded master_files path
+			my $iedb_out = $CLI_INPUT_DIR;
 			my $output_dir = $CLI_OUTPUT_DIR;
 			system("mkdir -p ${output_dir}homology_output") unless -d "${output_dir}homology_output";
 			system("mkdir -p ${output_dir}percentile_output") unless -d "${output_dir}percentile_output";
