@@ -130,7 +130,7 @@ def _concatenate_ref_outputs(base_dir: Path, ref_output_dir: str) -> None:
 	
 	NOTE: CONCATENATION ERROR RESOLUTION (Nov 2024):
 	The ref parser (iedb_output_ref-parse_v0-12.pl) creates concatenated files
-	by appending to Summary_IEDB_CD4epitope_summary.csv and Global_IEDB_out_CD4epitope_summary.csv
+	by appending to Summary_2methods_CD4epitope_summary.csv and Global_2methods_out_CD4epitope_summary.csv
 	using append mode (>>). However, this was found to only include the last processed size
 	(e.g., only 16-mer peptides, missing all 15-mer peptides).
 	
@@ -143,18 +143,18 @@ def _concatenate_ref_outputs(base_dir: Path, ref_output_dir: str) -> None:
 	"""
 	store = base_dir / f"{ref_output_dir}/outfile_store"
 	# Class II uses sizes 15-20, file names are like:
-	# Global_IEDB_out_CD4epitope_summary.15.csv, Global_IEDB_out_CD4epitope_summary.16.csv, etc.
-	# Summary_IEDB_CD4epitope_summary.15.csv, Summary_IEDB_CD4epitope_summary.16.csv, etc.
+	# Global_2methods_out_CD4epitope_summary.15.csv, Global_2methods_out_CD4epitope_summary.16.csv, etc.
+	# Summary_2methods_CD4epitope_summary.15.csv, Summary_2methods_CD4epitope_summary.16.csv, etc.
 	global_targets = [
-		store / "Global_IEDB_out_CD4epitope_summary.15.csv",
-		store / "Global_IEDB_out_CD4epitope_summary.16.csv",
-		store / "Global_IEDB_out_CD4epitope_summary.17.csv",
-		store / "Global_IEDB_out_CD4epitope_summary.18.csv",
-		store / "Global_IEDB_out_CD4epitope_summary.19.csv",
-		store / "Global_IEDB_out_CD4epitope_summary.20.csv",
+		store / "Global_2methods_out_CD4epitope_summary.15.csv",
+		store / "Global_2methods_out_CD4epitope_summary.16.csv",
+		store / "Global_2methods_out_CD4epitope_summary.17.csv",
+		store / "Global_2methods_out_CD4epitope_summary.18.csv",
+		store / "Global_2methods_out_CD4epitope_summary.19.csv",
+		store / "Global_2methods_out_CD4epitope_summary.20.csv",
 	]
 	# Always re-concatenate from size-specific files (v0-12.pl may create incomplete concatenated file)
-	global_out = store / "Global_IEDB_out_CD4epitope_summary.csv"
+	global_out = store / "Global_2methods_out_CD4epitope_summary.csv"
 	# Use pandas to properly concatenate (handles headers and ensures all rows are included)
 	gdfs = []
 	for f in global_targets:
@@ -183,16 +183,16 @@ def _concatenate_ref_outputs(base_dir: Path, ref_output_dir: str) -> None:
 							go.write(line.rstrip() + "\n")
 
 	summary_targets = [
-		store / "Summary_IEDB_CD4epitope_summary.15.csv",
-		store / "Summary_IEDB_CD4epitope_summary.16.csv",
-		store / "Summary_IEDB_CD4epitope_summary.17.csv",
-		store / "Summary_IEDB_CD4epitope_summary.18.csv",
-		store / "Summary_IEDB_CD4epitope_summary.19.csv",
-		store / "Summary_IEDB_CD4epitope_summary.20.csv",
+		store / "Summary_2methods_CD4epitope_summary.15.csv",
+		store / "Summary_2methods_CD4epitope_summary.16.csv",
+		store / "Summary_2methods_CD4epitope_summary.17.csv",
+		store / "Summary_2methods_CD4epitope_summary.18.csv",
+		store / "Summary_2methods_CD4epitope_summary.19.csv",
+		store / "Summary_2methods_CD4epitope_summary.20.csv",
 	]
 	# Always re-concatenate from size-specific files (v0-12.pl may create incomplete concatenated file)
 	# This ensures all sizes are included, not just the last one processed
-	summary_out = store / "Summary_IEDB_CD4epitope_summary.csv"
+	summary_out = store / "Summary_2methods_CD4epitope_summary.csv"
 	# Use pandas to properly concatenate (handles headers and ensures all rows are included)
 	dfs = []
 	for f in summary_targets:
@@ -210,7 +210,7 @@ def _concatenate_ref_outputs(base_dir: Path, ref_output_dir: str) -> None:
 			for f in summary_targets:
 				size = None
 				name = f.name
-				# Extract size from filename like "Summary_IEDB_CD4epitope_summary.15.csv"
+				# Extract size from filename like "Summary_2methods_CD4epitope_summary.15.csv"
 				match = re.search(r'\.(\d+)\.csv$', name)
 				if match:
 					size = int(match.group(1))
@@ -285,8 +285,8 @@ def _join_query_ref_outputs(base_dir: Path, query_output_dir: str, ref_output_di
 	ref_sequence_names = _load_reference_sequence_names(base_dir)
 	
 	# Join query homology Summary with ref Summary and write to query-ref_parsed
-	query_summary = base_dir / f"{query_output_dir}/homology_output/Summary_IEDB_CD4epitope_summary.csv"
-	ref_summary = base_dir / f"{ref_output_dir}/outfile_store/Summary_IEDB_CD4epitope_summary.csv"
+	query_summary = base_dir / f"{query_output_dir}/homology_output/Summary_2methods_CD4epitope_summary.csv"
+	ref_summary = base_dir / f"{ref_output_dir}/outfile_store/Summary_2methods_CD4epitope_summary.csv"
 	if query_summary.exists() and ref_summary.exists():
 		query_df = pd.read_csv(query_summary)
 		ref_df = pd.read_csv(ref_summary)
@@ -351,7 +351,7 @@ def _join_query_ref_outputs(base_dir: Path, query_output_dir: str, ref_output_di
 					log_file.write("=" * 80 + "\n")
 					log_file.write(f"Total excluded rows: {len(ref_excluded)}\n")
 					log_file.write(f"Date: {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-					log_file.write(f"Source: Summary_IEDB_CD4epitope_query_ref.csv\n")
+					log_file.write(f"Source: Summary_2methods_CD4epitope_query_ref.csv\n")
 					log_file.write(f"Reference sequences: {', '.join(sorted(ref_sequence_names))}\n")
 					log_file.write("=" * 80 + "\n")
 					log_file.write("\n")  # Blank line before CSV data
@@ -382,13 +382,13 @@ def _join_query_ref_outputs(base_dir: Path, query_output_dir: str, ref_output_di
 		# Write filtered results to output file
 		out_dir = base_dir / "query-ref_parsed"
 		out_dir.mkdir(parents=True, exist_ok=True)
-		out_path = out_dir / "Summary_IEDB_CD4epitope_query_ref.csv"
+		out_path = out_dir / "Summary_2methods_CD4epitope_query_ref.csv"
 		result_filtered.to_csv(out_path.as_posix(), index=False)
 		print(f"Wrote joined query-ref summary ({len(result_filtered)} rows) → {out_path}")
 
 	# Do the same join for the Global files (homology_output vs ref outfile_store)
-	query_global = base_dir / f"{query_output_dir}/homology_output/Global_IEDB_out_CD4epitope_summary.csv"
-	ref_global = base_dir / f"{ref_output_dir}/outfile_store/Global_IEDB_out_CD4epitope_summary.csv"
+	query_global = base_dir / f"{query_output_dir}/homology_output/Global_2methods_out_CD4epitope_summary.csv"
+	ref_global = base_dir / f"{ref_output_dir}/outfile_store/Global_2methods_out_CD4epitope_summary.csv"
 	if query_global.exists() and ref_global.exists():
 		qg = pd.read_csv(query_global)
 		rg = pd.read_csv(ref_global)
@@ -448,7 +448,7 @@ def _join_query_ref_outputs(base_dir: Path, query_output_dir: str, ref_output_di
 					log_file.write("=" * 80 + "\n")
 					log_file.write(f"Total excluded rows: {len(ref_excluded_global)}\n")
 					log_file.write(f"Date: {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-					log_file.write(f"Source: Global_IEDB_out_CD4epitope_query_ref.csv\n")
+					log_file.write(f"Source: Global_2methods_out_CD4epitope_query_ref.csv\n")
 					log_file.write(f"Reference sequences: {', '.join(sorted(ref_sequence_names))}\n")
 					log_file.write("=" * 80 + "\n")
 					log_file.write("\n")  # Blank line before CSV data
@@ -479,7 +479,7 @@ def _join_query_ref_outputs(base_dir: Path, query_output_dir: str, ref_output_di
 		# Write filtered results to output file
 		out_dir = base_dir / "query-ref_parsed"
 		out_dir.mkdir(parents=True, exist_ok=True)
-		g_out = out_dir / "Global_IEDB_out_CD4epitope_query_ref.csv"
+		g_out = out_dir / "Global_2methods_out_CD4epitope_query_ref.csv"
 		g_join_filtered.to_csv(g_out.as_posix(), index=False)
 		print(f"Wrote joined query-ref global ({len(g_join_filtered)} rows) → {g_out}")
 
@@ -495,7 +495,7 @@ def shared_epitopes(base_dir: Path) -> None:
 		base_dir: Base directory path
 	"""
 	# Input file from join operation
-	summary_file = base_dir / "query-ref_parsed/Summary_IEDB_CD4epitope_query_ref.csv"
+	summary_file = base_dir / "query-ref_parsed/Summary_2methods_CD4epitope_query_ref.csv"
 	
 	if not summary_file.exists():
 		print(f"[shared_epitopes] Warning: Input file not found: {summary_file}")

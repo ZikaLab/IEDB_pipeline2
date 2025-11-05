@@ -42,7 +42,7 @@ my @cd8_library = ('HLA-A*26:01', 'HLA-B*35:01', 'HLA-B*07:02', 'HLA-A*01:01', '
 Total
 my @cd8_library = ('HLA-B*40:01', 'HLA-A*26:01', 'HLA-A*11:01', 'HLA-A*24:02', 'HLA-B*35:01', 'HLA-B*07:02', 'HLA-A*01:01', 'HLA-A*02:01', 'HLA-B*15:01', 'HLA-B*08:01', 'HLA-B*38:01', 'HLA-A*30:01');
 =cut
-my $cd8_type = 'anticancer_test_';
+my $cd8_type = 'CD4epitope_test_';
 
 # Define base directory and alignment location (use environment variable or default)
 my $here = $ENV{'BASE_DIR'} ? $ENV{'BASE_DIR'} . '/' : '/Users/michael_gaunt/Desktop/Anastasia2/';
@@ -54,7 +54,7 @@ my @CD8_list = load_cd8_list($here);
 
 # Modified master_files to use CSV alignment file (should contain both reference and query sequences)
 my %master_files = ( 
-	'/dev_test_out-pl/' => 'anticancer_test-combined.csv'
+	'/dev_test_out-pl/' => 'CD4epitope_test-combined.csv'
 	);
 
 # Global variables to store dynamic reference sequences (set after loading alignment)
@@ -819,9 +819,9 @@ sub iedb_printout {
 	my $out_dir = $dir_7;  
 	(my $cd8_type_8 = $cd8_type_7) =~ s/(\w+)_/_$1/;
 	# Write a stable Global base name (no ---); size-specific files derived in file_clean
-	my $outfile_fin = "$out_dir" . "Global_IEDB_out_anticancer_summary.csv";
+	my $outfile_fin = "$out_dir" . "Global_2methods_out_CD4epitope_summary.csv";
 	# Write a stable summary base name (no ---); size-specific files derived in file_clean
-	my $outfile_summary = "$out_dir" . "Summary_IEDB_anticancer_summary.csv";
+	my $outfile_summary = "$out_dir" . "Summary_2methods_CD4epitope_summary.csv";
 	my $size_7;
 # Deleting any possible pre-existing outfile
 
@@ -1164,10 +1164,10 @@ sub file_clean {
 	my $out_dir_9 = $out_dir_8; # already points to homology_output/ or percentile_output/
 	# Build size-specific Summary by filtering combined summary rows by X-mer
 	my $summary_9 = $summary_8;
-	if ($summary_9 =~ /(.*Summary_IEDB_.*$locus_8$cd8_type_9\.)---(\.csv)/) {
-		($summary_9 = $summary_8) =~ s/(.*Summary_IEDB_.*$locus_8$cd8_type_9\.)---(\.csv)/$1$size_8$2/;
-	} elsif ($summary_9 =~ /(.*Summary_IEDB_anticancer_summary)(\.csv)/) {
-		($summary_9 = $summary_8) =~ s/(.*Summary_IEDB_anticancer_summary)(\.csv)/$1.$size_8$2/;
+	if ($summary_9 =~ /(.*Summary_2methods_.*$locus_8$cd8_type_9\.)---(\.csv)/) {
+		($summary_9 = $summary_8) =~ s/(.*Summary_2methods_.*$locus_8$cd8_type_9\.)---(\.csv)/$1$size_8$2/;
+	} elsif ($summary_9 =~ /(.*Summary_2methods_CD4epitope_summary)(\.csv)/) {
+		($summary_9 = $summary_8) =~ s/(.*Summary_2methods_CD4epitope_summary)(\.csv)/$1.$size_8$2/;
 	}
 	open(my $in_s, '<', $summary_8) or die "Cannot open summary for filtering: $!";
 	open(my $out_s, '>', $summary_9) or die "Cannot write size summary: $!";
@@ -1183,10 +1183,10 @@ sub file_clean {
 
 	# Build size-specific Global by filtering combined global rows by peptide length
 	my $outfile_9 = $outfile_8;
-	if ($outfile_9 =~ /(.*Global_IEDB_out_.*$locus_8$cd8_type_9\.)---(\.csv)/) {
-		($outfile_9 = $outfile_8) =~ s/(.*Global_IEDB_out_.*$locus_8$cd8_type_9\.)---(\.csv)/$1$size_8$2/;
-	} elsif ($outfile_9 =~ /(.*Global_IEDB_out_anticancer_summary)(\.csv)/) {
-		($outfile_9 = $outfile_8) =~ s/(.*Global_IEDB_out_anticancer_summary)(\.csv)/$1.$size_8$2/;
+	if ($outfile_9 =~ /(.*Global_2methods_out_.*$locus_8$cd8_type_9\.)---(\.csv)/) {
+		($outfile_9 = $outfile_8) =~ s/(.*Global_2methods_out_.*$locus_8$cd8_type_9\.)---(\.csv)/$1$size_8$2/;
+	} elsif ($outfile_9 =~ /(.*Global_2methods_out_CD4epitope_summary)(\.csv)/) {
+		($outfile_9 = $outfile_8) =~ s/(.*Global_2methods_out_CD4epitope_summary)(\.csv)/$1.$size_8$2/;
 	}
 	open(my $in_g, '<', $outfile_8) or die "Cannot open global for filtering: $!";
 	open(my $out_g, '>', $outfile_9) or die "Cannot write size global: $!";
