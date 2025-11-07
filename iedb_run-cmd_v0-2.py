@@ -8,6 +8,8 @@ import os
 import re
 import shutil
 import subprocess
+import json
+from datetime import datetime
 from pathlib import Path
 import pandas as pd
 
@@ -537,13 +539,60 @@ def shared_epitopes(base_dir: Path) -> None:
 	# Reset index to ensure clean output
 	shared_df = shared_df.reset_index(drop=True)
 	
-	# Write to output file
+	# Write to output directory
 	out_dir = base_dir / "query-ref_parsed"
 	out_dir.mkdir(parents=True, exist_ok=True)
-	out_file = out_dir / "Shared_CD4epitopes_allquery-ref.csv"
 	
-	shared_df.to_csv(out_file.as_posix(), index=False)
-	print(f"[shared_epitopes] Wrote shared epitopes ({len(shared_df)} rows) → {out_file}")
+	# Write CSV output (existing format)
+	csv_file = out_dir / "Shared_CD4epitopes_allquery-ref.csv"
+	shared_df.to_csv(csv_file.as_posix(), index=False)
+	print(f"[shared_epitopes] Wrote shared epitopes CSV ({len(shared_df)} rows) → {csv_file}")
+	
+	# Write JSON v1.1 output
+	json_file = out_dir / "Shared_CD4epitopes_allquery-ref.json"
+	json_data = {
+		"version": "1.1",
+		"metadata": {
+			"generated_at": datetime.now().isoformat(),
+			"total_shared_epitopes": len(shared_df),
+			"input_file": str(summary_file.relative_to(base_dir)) if str(summary_file).startswith(str(base_dir)) else str(summary_file),
+			"description": "Shared CD4 epitopes identified across multiple query sequences"
+		},
+		"shared_epitopes": []
+	}
+	
+	# Convert DataFrame rows to JSON format
+	for _, row in shared_df.iterrows():
+		epitope_entry = {
+			"peptide_query": str(row.get("Peptide query", "")),
+			"hla_genotype": str(row.get("HLA genotype", "")),
+			"peptide": str(row.get("Peptide", "")),
+			"epitope_size": str(row.get("Epitope size (X-mer)", "")),
+			"yp_ref": str(row.get("YP ref", "")),
+			"yai81105_ref": str(row.get("YAI81105 ref", "")),
+			"method": str(row.get("Method", "")),
+			"yp_like_epitopes": int(row.get("YP-like epitopes", 0)) if pd.notna(row.get("YP-like epitopes")) else None,
+			"yp_amino_acid_identity": int(row.get("YP amino acid identity", 0)) if pd.notna(row.get("YP amino acid identity")) else None,
+			"yp_amino_acid_diff": int(row.get("YP amino acid diff", 0)) if pd.notna(row.get("YP amino acid diff")) else None,
+			"total_amino_acids": int(row.get("Total amino acids", 0)) if pd.notna(row.get("Total amino acids")) else None,
+			"average": float(row.get("Average", 0.0)) if pd.notna(row.get("Average")) else None,
+			"yai81105_amino_acid_identity": int(row.get("YAI81105 amino acid identify", 0)) if pd.notna(row.get("YAI81105 amino acid identify")) else None,
+			"yai81105_amino_acid_diffs": int(row.get("YAI81105 amino acid diffs", 0)) if pd.notna(row.get("YAI81105 amino acid diffs")) else None,
+			"average_yai81105_like": float(row.get("Average YAI81105-like", 0.0)) if pd.notna(row.get("Average YAI81105-like")) else None,
+			"comblib_score": float(row.get("Comblib Score", 0.0)) if pd.notna(row.get("Comblib Score")) else None,
+			"tepitope_score": float(row.get("TEPITOPE Score", 0.0)) if pd.notna(row.get("TEPITOPE Score")) else None,
+			"percentile": float(row.get("Percentile", 0.0)) if pd.notna(row.get("Percentile")) else None,
+			"adjusted_percentile": float(row.get("Adjusted Percentile", 0.0)) if pd.notna(row.get("Adjusted Percentile")) else None,
+			"ref_adjusted_percentile": float(row.get("Ref Adjusted Percentile", 0.0)) if pd.notna(row.get("Ref Adjusted Percentile")) else None,
+			"percentile_delta": float(row.get("Percentile Delta", 0.0)) if pd.notna(row.get("Percentile Delta")) else None
+		}
+		json_data["shared_epitopes"].append(epitope_entry)
+	
+	# Write JSON file with proper formatting
+	with open(json_file, 'w') as f:
+		json.dump(json_data, f, indent=2, ensure_ascii=False)
+	
+	print(f"[shared_epitopes] Wrote shared epitopes JSON v1.1 ({len(shared_df)} entries) → {json_file}")
 
 
 def main() -> None:
