@@ -1,4 +1,4 @@
-# Anastasia2 - MHC Class II Epitope Prediction Workflow
+# MHC Class II Epitope Prediction Workflow
 
 ## Overview
 
