@@ -121,5 +121,5 @@ Michael W. Gaunt, Ph.D
 
 ## License
 
+The original code I wrote for the master branch that this was built on is GNU GENERAL PUBLIC LICENSE, thus this continues.
 See original IEDB package license for `ng_tc2-0.2.2-beta` components.
-
