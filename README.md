@@ -2,7 +2,7 @@
 
 ## Overview
 
-Anastasia2 is an adaptation of the Anastasia Class I MHC workflow for **MHC Class II** epitope prediction. This workflow integrates the IEDB Next-Generation Tools T Cell Class II package (`ng_tc2-0.2.2-beta`) to predict CD4+ T cell epitopes.
+Version2 is an adaptation of the Class I MHC workflow for **MHC Class II** epitope prediction. This workflow integrates the IEDB Next-Generation Tools T Cell Class II package (`ng_tc2-0.2.2-beta`) to predict CD4+ T cell epitopes.
 
 ## Key Features
 
